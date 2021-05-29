@@ -9,18 +9,21 @@ def download_one(url):
     fname = fullpath.name 
     ext = fullpath.suffix
 
-    if not ext:
-        raise RuntimeError("URL does not contain an extension")
+    futures_list = []
+    results = []
 
-    with open(fname, "wb") as handle:
-        while True:
-            chunk = req.read(1024)
-            if not chunk:
-                break
-            handle.write(chunk)
-    
-    msg = f"Finished Downloading {fname}"
-    return msg
+    with ThreadPoolExecutor(max_workers=13) as executor:
+        for url in urls:
+            futures = executor.submit(download_one, url)
+            futures_list.append(futures)
+
+        for future in futures_list:
+            try:
+                result = future.result(timeout=60)
+                results.append(result)
+            except Exception:
+                results.append(None)
+    return results
 
 @timeit
 def download_all(urls):
